@@ -340,10 +340,10 @@ spawn(function()
 end)
 spawn(function()
 	while wait(0.1) do
-		if active2 then
+		if active3 then
 			dupeTool()
 		end
-		if active3 then
+		if active2 then
 			killAura()
 		end
 	end
