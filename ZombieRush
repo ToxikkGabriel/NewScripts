@@ -89,8 +89,10 @@ local function getTarget()
 				if checkCharacter(v) == false then continue end
 				local ZombiesRequired = checkMissions()
 				if table.find(ZombiesRequired, v.Name) then
-					Target = v.Head.Position
-					return
+					if (v.Head.Position - myPlayer.Character:FindFirstChild("HumanoidRootPart").Position).Magnitude < 100 then
+						Target = v.Head.Position
+						return
+					end
 				end
 				if v.Name == "Zombie King" or v.Name == "Super Phantom" or v.Name == "Slime Zombie" then
 					Target = v.Head.Position
@@ -151,10 +153,20 @@ function setWallhack()
 			local info = debug.getinfo(obj)
 			if info.name == "MobileHit" then
 				if info.source then
-					if string.find(info.source, "GunController") then 
+					if string.find(info.source, "GunController") and not string.find(info.source, "CanOBeans") then 
 						if not string.find(info.source,"SnowballCannon") then
 							local upvalues = debug.getupvalues(obj)
 							local ignoreList = upvalues[4]
+							table.insert(ignoreList, workspace["Map Storage"])
+						end
+					end
+				end
+			elseif info.name == "NormalHit" then
+				if info.source then
+					if string.find(info.source, "GunController") then 
+						if not string.find(info.source,"SnowballCannon") then
+							local upvalues = debug.getupvalues(obj)
+							local ignoreList = upvalues[3]
 							table.insert(ignoreList, workspace["Map Storage"])
 						end
 					end
@@ -194,14 +206,12 @@ function setRange(number)
 end
 
 function dupeTool()
-	if active2 then
-		if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid").Health > 0 then
-			if game.Players.LocalPlayer.Backpack:FindFirstChildOfClass("Tool") then
-				for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-					if v:IsA("Tool") then
-						if v:FindFirstChild("GunController") or v:FindFirstChild("SlimeLauncherLocal") then
-							v.Parent = game.Players.LocalPlayer.Character
-						end
+	if checkPlayer(myPlayer) then
+		if myPlayer.Backpack:FindFirstChildOfClass("Tool") then
+			for i,v in pairs(myPlayer.Backpack:GetChildren()) do
+				if v:IsA("Tool") then
+					if v:FindFirstChild("GunController") or v:FindFirstChild("SlimeLauncherLocal") then
+						v.Parent = myPlayer.Character
 					end
 				end
 			end
@@ -220,7 +230,32 @@ function silentAim()
 			local info = debug.getinfo(obj)
 			if info.name == "MobileHit" then
 				if info.source then
-					if not string.find(info.source,"SnowballCannon") then
+					if not string.find(info.source,"SnowballCannon") and not string.find(info.source, "CanOBeans") then
+						oldFunc = obj
+						local success = pcall(function()
+							hookfunction(obj, function()
+								local tool = myPlayer.Character:FindFirstChildOfClass("Tool")
+								local t,newRay
+								if Target and checkPlayer(myPlayer) then
+									t,newRay = workspace:FindPartOnRayWithIgnoreList(Ray.new(tool:FindFirstChild("Handle").Muzzle.WorldPosition,(tool:FindFirstChild("Handle").Muzzle.WorldPosition - Target).Unit * -10000),{myPlayer.Character, workspace["Map Storage"]})
+								end
+								if newRay then 
+									return newRay
+								else
+									return nil
+								end
+							end)
+						end)
+						if success then
+							print("Hook aplicado com sucesso em:", info.name)
+						else
+							print("Falha ao aplicar hook em:", info.name)
+						end
+					end
+				end
+			elseif info.name == "NormalHit" then
+				if info.source then
+					if not string.find(info.source,"SnowballCannon") and not string.find(info.source, "CanOBeans") then
 						oldFunc = obj
 						local success = pcall(function()
 							hookfunction(obj, function()
@@ -343,17 +378,19 @@ end)
 spawn(function()
 	while wait(0.1) do
 		if active2 then
-			killAura()
+			dupeTool()
 		end
 		if active3 then
-			dupeTool()
+			killAura()
 		end
 	end
 end)
+
 local bb = game:service'VirtualUser'
 game:service'Players'.LocalPlayer.Idled:connect(function()
 	bb:CaptureController()bb:ClickButton2(Vector2.new())
 end)
+
 
 game.Players.LocalPlayer.CharacterAdded:Connect(function()
 	createGui()
