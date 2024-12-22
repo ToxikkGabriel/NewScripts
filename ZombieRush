@@ -113,7 +113,7 @@ function autoShot()
 			if info.name == "ActivateTool" then
 				if info.source then
 					if string.find(info.source, "GunController") then
-						if not string.find(info.source,"SnowballCannon") then
+						if not string.find(info.source,"SnowballCannon") and not string.find(info.source, "CanOBeans") then
 							local upvalues = debug.getupvalues(obj)
 							while wait() do
 								upvalues[2] = true
@@ -133,7 +133,7 @@ function setSpread()
 			if info.name == "ActivateTool" then
 				if info.source then
 					if string.find(info.source, "GunController") then 
-						if not string.find(info.source,"SnowballCannon") then
+						if not string.find(info.source,"SnowballCannon") and not string.find(info.source, "CanOBeans") then
 							local upvalues = debug.getupvalues(obj)
 							debug.setupvalue(obj,20,0)
 							upvalues[20] = 0
@@ -161,7 +161,7 @@ function setWallhack()
 				end
 			elseif info.name == "ActivateTool" then
 				if info.source then
-					if string.find(info.source, "GunController") then 
+					if string.find(info.source, "GunController") and not string.find(info.source, "CanOBeans") then 
 						if not string.find(info.source,"SnowballCannon") then
 							local upvalues = debug.getupvalues(obj)
 							local ignoreList = upvalues[23]
@@ -177,7 +177,7 @@ function setRange(number)
 	for _, obj in pairs(getgc(true)) do
 		if type(obj) == "function" and islclosure(obj) then
 			local info = debug.getinfo(obj)
-			if info.name == "ActivateTool" then
+			if info.name == "ActivateTool" and not string.find(info.source, "CanOBeans") then
 				if info.source then
 					if string.find(info.source, "GunController") then
 						if not string.find(info.source,"SnowballCannon") then
@@ -225,7 +225,11 @@ function silentAim()
 								local tool = myPlayer.Character:FindFirstChildOfClass("Tool")
 								local t,newRay
 								if Target and checkPlayer(myPlayer) then
-									t,newRay = workspace:FindPartOnRayWithIgnoreList(Ray.new(tool:FindFirstChild("Handle").Muzzle.WorldPosition,(tool:FindFirstChild("Handle").Muzzle.WorldPosition - Target).Unit * -10000),{myPlayer.Character, workspace["Map Storage"]})
+									if tool:FindFirstChild("Handle") then
+										if tool.Handle:FindFirstChild("Muzzle") then
+											t,newRay = workspace:FindPartOnRayWithIgnoreList(Ray.new(tool:FindFirstChild("Handle").Muzzle.WorldPosition,(tool:FindFirstChild("Handle").Muzzle.WorldPosition - Target).Unit * -10000),{myPlayer.Character, workspace["Map Storage"]})
+										end
+									end
 								end
 								if newRay then 
 									return newRay
