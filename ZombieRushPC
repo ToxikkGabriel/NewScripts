@@ -1,0 +1,330 @@
+local myPlayer = game.Players.LocalPlayer
+
+local Target = Vector3.new(0,0,0)
+
+local MissionsPath = game:GetService("Players").LocalPlayer.PlayerGui.MainGui.Missions.Container.Frame
+local active1 = false
+local active2 = false
+local active3 = false
+
+local Button1
+local Button2
+local Button3
+local Button4
+
+local function checkMissions()
+	local Zombies = {}
+	for i, v in pairs(MissionsPath:GetChildren()) do
+		if v.Name ~= "UIGridLayout" then
+			local MissionString = v.Mission.Text
+			local words = string.split(MissionString, " ")
+			if words[1] == "Kill" then
+				if words[3] == "Zombies" then
+					table.insert(Zombies, words[2])
+				elseif words[3] == "Brute" then
+					table.insert(Zombies, (words[2].. " " ..words[3]))
+				elseif words[3] == "Skeleton" then
+					table.insert(Zombies, (words[2].. " " ..words[3]))
+				end
+			end
+		end
+	end
+	return Zombies
+end
+
+function checkPlayer(player)
+	if player.Character then
+		if player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") then
+			if player.Character:FindFirstChild("Humanoid").Health > 0 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function checkCharacter(player)
+	if player then
+		if player:FindFirstChild("Humanoid") and player:FindFirstChild("HumanoidRootPart") then
+			if player:FindFirstChild("Humanoid").Health > 0 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function killAura()
+	if checkPlayer(game.Players.LocalPlayer) and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool") and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool"):FindFirstChild("MeleeController") then
+		local humanoids = {}
+		for i,v in pairs(game.workspace["Zombie Storage"]:GetChildren()) do
+			if checkCharacter(v) == false then continue end
+			if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude < 10 then
+				table.insert(humanoids, v.Humanoid)
+			end
+		end
+		if humanoids[1] and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool") and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool"):FindFirstChild("MeleeController") then
+			local args = {
+				[1] = {
+					["Direction"] = -(game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humanoids[1].Parent.HumanoidRootPart.Position).unit,
+					["Name"] = game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name,
+					["HumanoidsFound"] = humanoids
+				}
+			}
+			game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").MeleeController.RemoteFunction:InvokeServer(unpack(args))
+			args = nil
+			humanoids = {}
+		end
+	end
+end
+
+local function getTarget()
+	local maxDist = 500
+	Target = Vector3.new(0,0,0)
+	if checkPlayer(myPlayer) then
+		if myPlayer.Character and myPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			for i,v in pairs(game.Workspace["Zombie Storage"]:GetChildren()) do
+				if checkCharacter(v) == false then continue end
+				local ZombiesRequired = checkMissions()
+				if table.find(ZombiesRequired, v.Name) then
+					if (v.Head.Position - myPlayer.Character:FindFirstChild("HumanoidRootPart").Position).Magnitude < 50 then
+						Target = v.Head.Position
+						return
+					end
+				end
+				if v.Name == "Zombie King" or v.Name == "Super Phantom" or v.Name == "Slime Zombie" then
+					Target = v.Head.Position
+					return
+				end
+				local distance = (myPlayer.Character:FindFirstChild("HumanoidRootPart").Position - v.Head.Position).Magnitude
+				if distance < maxDist then
+					maxDist = distance
+					Target = v.Head.Position
+				end
+			end
+		end
+	end
+end
+
+function autoShot()
+	for _, obj in pairs(getgc(true)) do
+		if type(obj) == "function" and islclosure(obj) then
+			local info = debug.getinfo(obj)
+			if info.name == "ActivateTool" then
+				if info.source then
+					local lowerSource = string.lower(info.source)
+					if string.find(lowerSource,"paintballgun") then
+						local upvalues = debug.getupvalues(obj)
+						spawn(function()
+							while wait() do
+								if debug.getupvalues(obj)[1] == nil or obj == nil then
+									break
+								end 
+								upvalues[2] = true
+								debug.setupvalue(obj,2,true)
+							end
+						end)
+					end
+				end
+			end
+		end
+	end
+end
+function setSpread()
+	for _, obj in pairs(getgc(true)) do
+		if type(obj) == "function" and islclosure(obj) then
+			local info = debug.getinfo(obj)
+			if info.name == "ActivateTool" then
+				if info.source then
+					local lowerSource = string.lower(info.source)
+					if string.find(lowerSource,"paintballgun") then
+						local upvalues = debug.getupvalues(obj)
+						debug.setupvalue(obj,20,0)
+						upvalues[20] = 0
+					end
+				end
+			end
+		end
+	end
+end
+
+function setWallhack()
+	for _, obj in pairs(getgc(true)) do
+		if type(obj) == "function" and islclosure(obj) then
+			local info = debug.getinfo(obj)
+			if info.name == "MobileHit" then
+				if info.source then
+					local lowerSource = string.lower(info.source)
+					if string.find(lowerSource,"paintballgun") then
+						local upvalues = debug.getupvalues(obj)
+						local ignoreList = upvalues[4]
+						table.insert(ignoreList, workspace["Map Storage"])
+						spawn(function()
+							while wait() do
+								if debug.getupvalues(obj)[1] == nil or obj == nil then
+									break
+								end 
+								upvalues[2] = true
+								debug.setupvalue(obj,10,true)
+							end
+						end)
+					end
+				end
+			elseif info.name == "ActivateTool" then
+				if info.source then
+					local lowerSource = string.lower(info.source)
+					if string.find(lowerSource,"paintballgun") then
+						local upvalues = debug.getupvalues(obj)
+						local ignoreList = upvalues[23]
+						table.insert(ignoreList, workspace["Map Storage"])
+					end
+				end
+			end
+		end
+	end
+end
+function setRange(number)
+	for _, obj in pairs(getgc(true)) do
+		if type(obj) == "function" and islclosure(obj) then
+			local info = debug.getinfo(obj)
+			if info.name == "ActivateTool" then
+				if info.source then
+					local lowerSource = string.lower(info.source)
+					if string.find(lowerSource,"paintballgun") then
+						local upvalues = debug.getupvalues(obj)
+						for i = 1,5 do
+							debug.setupvalue(obj,21,number)
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+function dupeTool()
+	if checkPlayer(myPlayer) then
+		if myPlayer.Backpack:FindFirstChildOfClass("Tool") then
+			for i,v in pairs(myPlayer.Backpack:GetChildren()) do
+				if v:IsA("Tool") then
+					if v:FindFirstChild("GunController") or v:FindFirstChild("SlimeLauncherLocal") then
+						v.Parent = myPlayer.Character
+					end
+				end
+			end
+		end
+	end
+end
+
+
+local function toggleActive2()
+	active2 = not active2
+	if active2 == false then
+		Button2.Text = "Kill Aura OFF"
+	else
+		Button2.Text = "Kill Aura ON"
+	end
+end
+
+local function toggleActive3()
+	active3 = not active3
+	if active3 == false then
+		Button3.Text = "Duplicar OFF"
+	else
+		Button3.Text = "Duplicar ON"
+	end
+end
+
+local function createGui()
+	if not game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Executed") then
+		local ScreenGui = Instance.new("ScreenGui")
+		Button1 = Instance.new("TextButton")
+		Button2 = Instance.new("TextButton")
+		Button3 = Instance.new("TextButton")
+		Button4 = Instance.new("TextButton") -- Novo botão acima do Button1
+
+		-- Configurando o ScreenGui para aparecer na tela
+		ScreenGui.Name = "Executed"
+		ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+		-- Configurando o quarto botão (Button4)
+		Button4.Parent = ScreenGui
+		Button4.Text = "God Mode"
+		Button4.TextScaled = true
+		Button4.Size = UDim2.new(0, 200, 0, 50) -- Largura: 200px, Altura: 50px
+		Button4.Position = UDim2.new(0.9, -200, 0.7, -110) -- Posição acima do Button1
+		Button4.BackgroundColor3 = Color3.fromRGB(170, 0, 255)
+
+		-- Configurando o primeiro botão (Button1)
+		Button1.Parent = ScreenGui
+		Button1.Text = "Silent Aim OFF"
+		Button1.TextScaled = true
+		Button1.Size = UDim2.new(0, 200, 0, 50) -- Largura: 200px, Altura: 50px
+		Button1.Position = UDim2.new(0.9, -200, 0.7, -50) -- Posição relativa
+		Button1.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+
+		-- Configurando o segundo botão (Button2)
+		Button2.Parent = ScreenGui
+		Button2.Text = "Kill Aura OFF"
+		Button2.TextScaled = true
+		Button2.Size = UDim2.new(0, 200, 0, 50) 
+		Button2.Position = UDim2.new(0.9, -200, 0.7, 10) -- Posição 10px abaixo do primeiro botão
+		Button2.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+
+		-- Configurando o terceiro botão (Button3)
+		Button3.Parent = ScreenGui
+		Button3.Text = "Duplicar OFF"
+		Button3.TextScaled = true
+		Button3.Size = UDim2.new(0, 200, 0, 50)
+		Button3.Position = UDim2.new(0.9, -200, 0.7, 70)
+		Button3.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+
+		Button1.MouseButton1Click:Connect(function()
+			setSpread()
+			setRange(1500)
+			setWallhack()
+		end)
+		Button2.MouseButton1Click:Connect(toggleActive2)
+		Button3.MouseButton1Click:Connect(toggleActive3)
+		Button4.MouseButton1Click:Connect(function()
+			local lobbyPos = Vector3.new(228,17,566)
+
+			game:GetService("ReplicatedStorage").Remotes.PlayerZombie:FireServer(myPlayer.Character, "Mobile")
+			wait(3)
+			myPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(lobbyPos)
+		end)
+	end
+end
+
+
+spawn(function()
+	while wait(5) do
+		for i,v in pairs(game.Workspace:GetChildren()) do
+			if v.Name == "Zombie King" or v.Name == "Super Phantom" or v.Name == "Slime Zombie" then
+				v.Parent = game.Workspace["Zombie Storage"]
+			end
+		end
+		setWallhack()
+	end
+end)
+spawn(function()
+	while wait(0.1) do
+		if active3 then
+			dupeTool()
+		end
+		if active2 then
+			killAura()
+		end
+	end
+end)
+
+local bb = game:service'VirtualUser'
+game:service'Players'.LocalPlayer.Idled:connect(function()
+	bb:CaptureController()bb:ClickButton2(Vector2.new())
+end)
+
+
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+	createGui()
+end)
+createGui()
