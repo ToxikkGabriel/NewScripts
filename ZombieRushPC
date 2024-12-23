@@ -106,38 +106,14 @@ local function getTarget()
 	end
 end
 
-function autoShot()
-	for _, obj in pairs(getgc(true)) do
-		if type(obj) == "function" and islclosure(obj) then
-			local info = debug.getinfo(obj)
-			if info.name == "ActivateTool" then
-				if info.source then
-					local lowerSource = string.lower(info.source)
-					if string.find(lowerSource,"paintballgun") then
-						local upvalues = debug.getupvalues(obj)
-						spawn(function()
-							while wait() do
-								if debug.getupvalues(obj)[1] == nil or obj == nil then
-									break
-								end 
-								upvalues[2] = true
-								debug.setupvalue(obj,2,true)
-							end
-						end)
-					end
-				end
-			end
-		end
-	end
-end
 function setSpread()
 	for _, obj in pairs(getgc(true)) do
-		if type(obj) == "function" and islclosure(obj) then
+		if type(obj) == "function" then
 			local info = debug.getinfo(obj)
 			if info.name == "ActivateTool" then
 				if info.source then
 					local lowerSource = string.lower(info.source)
-					if string.find(lowerSource,"paintballgun") then
+					if not string.find(lowerSource,"snowballcannon") then
 						local upvalues = debug.getupvalues(obj)
 						debug.setupvalue(obj,20,0)
 						upvalues[20] = 0
@@ -148,59 +124,6 @@ function setSpread()
 	end
 end
 
-function setWallhack()
-	for _, obj in pairs(getgc(true)) do
-		if type(obj) == "function" and islclosure(obj) then
-			local info = debug.getinfo(obj)
-			if info.name == "MobileHit" then
-				if info.source then
-					local lowerSource = string.lower(info.source)
-					if string.find(lowerSource,"paintballgun") then
-						local upvalues = debug.getupvalues(obj)
-						local ignoreList = upvalues[4]
-						table.insert(ignoreList, workspace["Map Storage"])
-						spawn(function()
-							while wait() do
-								if debug.getupvalues(obj)[1] == nil or obj == nil then
-									break
-								end 
-								upvalues[2] = true
-								debug.setupvalue(obj,10,true)
-							end
-						end)
-					end
-				end
-			elseif info.name == "ActivateTool" then
-				if info.source then
-					local lowerSource = string.lower(info.source)
-					if string.find(lowerSource,"paintballgun") then
-						local upvalues = debug.getupvalues(obj)
-						local ignoreList = upvalues[23]
-						table.insert(ignoreList, workspace["Map Storage"])
-					end
-				end
-			end
-		end
-	end
-end
-function setRange(number)
-	for _, obj in pairs(getgc(true)) do
-		if type(obj) == "function" and islclosure(obj) then
-			local info = debug.getinfo(obj)
-			if info.name == "ActivateTool" then
-				if info.source then
-					local lowerSource = string.lower(info.source)
-					if string.find(lowerSource,"paintballgun") then
-						local upvalues = debug.getupvalues(obj)
-						for i = 1,5 do
-							debug.setupvalue(obj,21,number)
-						end
-					end
-				end
-			end
-		end
-	end
-end
 
 function dupeTool()
 	if checkPlayer(myPlayer) then
@@ -281,8 +204,6 @@ local function createGui()
 
 		Button1.MouseButton1Click:Connect(function()
 			setSpread()
-			setRange(1500)
-			setWallhack()
 		end)
 		Button2.MouseButton1Click:Connect(toggleActive2)
 		Button3.MouseButton1Click:Connect(toggleActive3)
@@ -290,7 +211,7 @@ local function createGui()
 			local lobbyPos = Vector3.new(228,17,566)
 
 			game:GetService("ReplicatedStorage").Remotes.PlayerZombie:FireServer(myPlayer.Character, "Mobile")
-			wait(3)
+			wait(2.5)
 			myPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(lobbyPos)
 		end)
 	end
@@ -304,7 +225,6 @@ spawn(function()
 				v.Parent = game.Workspace["Zombie Storage"]
 			end
 		end
-		setWallhack()
 	end
 end)
 spawn(function()
