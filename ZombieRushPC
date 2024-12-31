@@ -124,14 +124,25 @@ function setSpread()
 	end
 end
 
-
+local function checkTool(tool)
+	if checkPlayer(myPlayer) then
+		if myPlayer.Character:FindFirstChild(tool.Name) then
+			return true
+		end
+	end
+	return false
+end
 function dupeTool()
 	if checkPlayer(myPlayer) then
 		if myPlayer.Backpack:FindFirstChildOfClass("Tool") then
 			for i,v in pairs(myPlayer.Backpack:GetChildren()) do
 				if v:IsA("Tool") then
 					if v:FindFirstChild("GunController") or v:FindFirstChild("SlimeLauncherLocal") then
-						v.Parent = myPlayer.Character
+						if not checkTool(v) then
+							v.Parent = myPlayer.Character
+						else
+							v:Destroy()
+						end
 					end
 				end
 			end
@@ -216,6 +227,15 @@ local function createGui()
 		end)
 	end
 end
+spawn(function()
+	while true do
+		local backpackVisible = game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Backpack)
+		if not backpackVisible then
+			game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
+		end
+		wait(0.1)
+	end
+end)
 
 
 spawn(function()
