@@ -25,13 +25,11 @@ local righttoypart2 =  createpart(Vector3.new(1,1,1), "RToy2",true)
 local thirdperson = false
 local lefttoyenable = false
 local righttoyenable = false
-local lefttoyenable2 = false
 local righttoyenable2 = false
 local lfirst = true
 local rfirst = true
 local ltoypos = CFrame.new(1.15,0,0) * CFrame.Angles(0,math.rad(180),0)
 local rtoypos = CFrame.new(1.15,0,0) * CFrame.Angles(0,math.rad(0),0)
-local ltoypos2 = CFrame.new(1.15,0,0) * CFrame.Angles(0,math.rad(180),0)
 local rtoypos2 = CFrame.new(1.15,0,0) * CFrame.Angles(0,math.rad(0),0)
 local parts = {
 	left=lefthandpart,
@@ -39,7 +37,6 @@ local parts = {
 	headhats=headpart,
 	leftToy=lefttoypart,
 	rightToy=righttoypart,
-	leftToy2=lefttoypart2,
 	rightToy2=righttoypart2,
 }
 function _isnetworkowner(Part)
@@ -61,7 +58,6 @@ function findMeshID(id)
 	if options.leftToy=="meshid:"..id then return true,"leftToy" end
 	if options.rightToy=="meshid:"..id then return true,"rightToy" end
 	if options.rightToy2=="meshid:"..id then return true,"rightToy2" end
-	if options.leftToy2=="meshid:"..id then return true,"leftToy2" end
 	return false
 end
 
@@ -74,7 +70,6 @@ function findHatName(id)
 	if options.leftToy==id then return true,"leftToy" end
 	if options.rightToy==id then return true,"rightToy" end
 	if options.rightToy2=="meshid:"..id then return true,"rightToy2" end
-	if options.leftToy2=="meshid:"..id then return true,"leftToy2" end
 	return false
 end
 
@@ -170,9 +165,6 @@ getgenv().con5 = input.UserCFrameChanged:connect(function(part,move)
 		if lefttoyenable then
 			lefttoypart.CFrame = lefthandpart.CFrame * ltoypos
 		end
-		if lefttoyenable2 then
-			lefttoypart2.CFrame = lefthandpart.CFrame * ltoypos2
-		end
 	elseif part == Enum.UserCFrame.RightHand then
 		righthandpart.CFrame = cam.CFrame*(CFrame.new(move.p*(cam.HeadScale-1))*move*CFrame.Angles(math.rad(options.righthandrotoffset.X),math.rad(options.righthandrotoffset.Y),math.rad(options.righthandrotoffset.Z)))
 		if righttoyenable then
@@ -204,13 +196,6 @@ getgenv().con4 = input.InputBegan:connect(function(key)
 		end
 		rfirst = false
 		righttoyenable = not righttoyenable
-	end
-	if key.KeyCode == options.leftToyBind2 then
-		if not lfirst then
-			ltoypos2 = lefttoypart2.CFrame:ToObjectSpace(lefthandpart.CFrame):Inverse()
-		end
-		lfirst = false
-		lefttoyenable2 = not lefttoyenable2
 	end
 	if key.KeyCode == options.rightToyBind2 then
 		if not rfirst then
