@@ -1,0 +1,460 @@
+local myPlayer = game.Players.LocalPlayer
+local myChar = myPlayer.Character
+--[[
+myPlayer.CharacterAdded:Connect(function(char)
+    wait(3)
+    myChar = char
+end)
+]]
+function checkPlayer(player)
+	if player.Character then
+		if player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") then
+			if player.Character:FindFirstChild("Humanoid").Health > 0 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function checkCharacter(player)
+	if player then
+		if player:FindFirstChildOfClass("Humanoid") and player:FindFirstChild("HumanoidRootPart") then
+			if player:FindFirstChildOfClass("Humanoid").Health > 0 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local Items = {"Carrot","Berry","Old Rod","Revolver Ammo","Old Flashlight","Coin Stack","Rifle Ammo","Leather Body","Cake","Steak","Iron Body","Apple","Sapling","Revolver","Seed Box","Cultist","Cultist Gem","Bunny Foot","Tyre","Rifle","Old Radio","Bear Pelt","Anvil Front","Anvil Back","Giant Sack","Cooked Morsel","Broken Fan","Broken Microwave","Oil Barrel","Gem of the Forest Fragment","Coal","Old Car Engine","Strong Axe","Fuel Canister","Bolt","Bandage","Spear","Washing Machine","Wolf Pelt","Good Sack","MedKit","Cultist Prototype","Morsel","Log","Arctic Fox Pelt","Chair","Cooked Steak","Ice Axe","Feather","Crossbow Cultist","Jellyfish","Basketball","Defense Blueprint","Tactical Shotgun","Strong Flashlight","Poison Spear","Snowball","Kunai","Diamond","Alpha Wolf Pelt"}
+
+
+function getSackFull()
+    if checkPlayer(myPlayer) then
+        local Sack = getSack()
+        local Capacity = Sack:GetAttribute("Capacity")
+        local NumberItems = myPlayer.ItemBag:GetChildren()
+        if #NumberItems == Capacity then
+            return true
+        else
+            return false
+        end
+    end
+end
+
+function getSack()
+    if checkPlayer(myPlayer) then
+        for i,v in pairs(myPlayer.Inventory:GetChildren()) do
+            if string.find(v.Name, "Sack") then
+                return v
+            end
+        end
+    end
+end
+function getAxe()
+    if checkPlayer(myPlayer) then
+        for i,v in pairs(myPlayer.Inventory:GetChildren()) do
+            if string.find(v.Name, "Axe") then
+                return v
+            end
+        end
+    end
+end
+function getScrap()
+    local Sack = getSack()
+    if Sack and checkPlayer(myPlayer) then
+        local HRP = myChar.HumanoidRootPart
+        local initialCF = HRP.CFrame
+        local initialPos = HRP.Position
+
+        for _, v in pairs(workspace.Items:GetChildren()) do
+            if v:GetAttribute("Scrappable") and not getSackFull() then
+                local itemPart = v.PrimaryPart
+                if itemPart then
+                    local distance = (itemPart.Position - initialPos).Magnitude
+
+                    if distance > 50 then
+                        -- Teleporta até o item
+                        HRP.CFrame = itemPart.CFrame + Vector3.new(0, 3, 0)
+                        wait(0.2)
+                        game:GetService("ReplicatedStorage").RemoteEvents.RequestBagStoreItem:InvokeServer(Sack, v)
+                        wait(0.8)
+                        if getSackFull() then
+                            break
+                        end
+                    end
+                end
+            end
+        end
+
+        wait(1)
+        HRP.CFrame = initialCF
+    end
+end
+function getFuel()
+    local Sack = getSack()
+    if Sack and checkPlayer(myPlayer) then
+        local HRP = myChar.HumanoidRootPart
+        local initialCF = HRP.CFrame
+        local initialPos = HRP.Position
+
+        for _, v in pairs(workspace.Items:GetChildren()) do
+            if v:GetAttribute("BurnFuel") and not getSackFull() and v.Name ~= "Log" and v.Name ~= "Sapling" and v.Name ~= "Chair" then
+                local itemPart = v.PrimaryPart
+                if itemPart then
+                    local distance = (itemPart.Position - initialPos).Magnitude
+
+                    if distance > 50 then
+                        -- Teleporta até o item
+                        HRP.CFrame = itemPart.CFrame + Vector3.new(0, 3, 0)
+                        wait(0.2)
+                        game:GetService("ReplicatedStorage").RemoteEvents.RequestBagStoreItem:InvokeServer(Sack, v)
+                        wait(0.8)
+                        if getSackFull() then
+                            break
+                        end
+                    end
+                end
+            end
+        end
+
+        wait(1)
+        HRP.CFrame = initialCF
+    end
+end
+
+function getChilds()
+    local Sack = getSack()
+    if Sack and checkPlayer(myPlayer) then
+        local HRP = myChar.HumanoidRootPart
+        local initialCF = HRP.CFrame
+        local initialPos = HRP.Position
+
+        for _, v in pairs(workspace.Characters:GetChildren()) do
+            if string.find(v.Name, "Lost Child") and not getSackFull() then
+                local itemPart = v.PrimaryPart
+                if itemPart then
+                    local distance = (itemPart.Position - initialPos).Magnitude
+
+                    if distance > 50 then
+                        -- Teleporta até o item
+                        HRP.CFrame = itemPart.CFrame + Vector3.new(0, 3, 0)
+                        wait(0.2)
+                        game:GetService("ReplicatedStorage").RemoteEvents.RequestBagStoreItem:InvokeServer(Sack, v)
+                    end
+                end
+            end
+        end
+
+        wait(1)
+        HRP.CFrame = initialCF
+    end
+end
+
+function getItem(item)
+    local Sack = getSack()
+    if Sack and checkPlayer(myPlayer) then
+        local HRP = myChar.HumanoidRootPart
+        local initialCF = HRP.CFrame
+        local initialPos = HRP.Position
+
+        for _, v in pairs(workspace.Items:GetChildren()) do
+            if v.Name == item and not getSackFull() then
+                local itemPart = v.PrimaryPart
+                if itemPart then
+                    local distance = (itemPart.Position - initialPos).Magnitude
+
+                    if distance > 50 then
+                        -- Teleporta até o item
+                        HRP.CFrame = itemPart.CFrame + Vector3.new(0, 3, 0)
+                        wait(0.2)
+                        if item == "Bandage" or item == "MedKit" then
+                            game:GetService("ReplicatedStorage").RemoteEvents.RequestHotbarItem:InvokeServer(v)
+                        else
+                            game:GetService("ReplicatedStorage").RemoteEvents.RequestBagStoreItem:InvokeServer(Sack, v)
+                        end
+                        -- Cria uma região ao redor do item (um cubo de 10x10x10 por exemplo)
+                        local regionSize = Vector3.new(15, 15, 15) -- raio de captura
+                        local region = Region3.new(
+                            itemPart.Position - (regionSize / 2),
+                            itemPart.Position + (regionSize / 2)
+                        )
+                        wait(0.5)
+                        -- Procura partes nessa região
+                        local nearbyParts = workspace:FindPartsInRegion3(region, nil, 100)
+
+                        for _, part in pairs(nearbyParts) do
+                            local model = part:FindFirstAncestorOfClass("Model")
+                            if model and model:IsDescendantOf(workspace.Items) and model.Name == item then
+                                game:GetService("ReplicatedStorage").RemoteEvents.RequestBagStoreItem:InvokeServer(Sack, model)
+                                wait(0.1)
+                                if getSackFull() then
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        wait(1)
+        HRP.CFrame = initialCF
+    end
+end
+local module = require(game:GetService("Players").LocalPlayer.PlayerScripts.Client)
+function getEquipped()
+    if checkPlayer(myPlayer) then
+        if myChar:FindFirstChild("ToolHandle") then
+            return myChar.ToolHandle.OriginalItem.Value
+        end
+    end
+end
+
+function ChopTrees()
+    local MaxDist = 100
+    local item = getEquipped()
+    for i,v in pairs(game.workspace.Map:GetDescendants()) do
+        if v.Name == "Small Tree" then
+            if v:FindFirstChild("Trunk") then
+                if (v.Trunk.Position - myChar.HumanoidRootPart.Position).Magnitude < MaxDist then
+                    local any_ApplyLocalDamage_result1_2, any_ApplyLocalDamage_result2_2 = module.EnemyHandler.ApplyLocalDamage(v, item:GetAttribute("WeaponResourceDamage"))
+					local any_InvokeServer_result1_2 = module.Events.ToolDamageObject:InvokeServer(v, item, any_ApplyLocalDamage_result1_2, myChar.HumanoidRootPart.CFrame)
+                    print(v:GetAttribute("Health"))
+                end
+            end
+        end
+    end
+end
+
+game:GetService("ProximityPromptService").PromptButtonHoldBegan:Connect(function(prompt)
+  fireproximityprompt(prompt)
+end)
+
+local enemyHandler = require(myPlayer.PlayerScripts.Client.EnemyHandler)
+local axe
+for i,v in pairs(getgc(true)) do
+    if type(v) == "table" and rawget(v, "LastSwing") and rawget(v, "Cooldown") then
+        print("Achei arma:", v)
+        axe = v.LastSwing
+    end
+end
+
+
+function killAura()
+    local MaxDist = 100
+    local item = getEquipped()
+    local hit
+    for i,v in pairs(workspace.Characters:GetDescendants()) do
+        if checkCharacter(v) then
+            if (v.PrimaryPart.Position - myChar.HumanoidRootPart.Position).Magnitude < MaxDist then
+                hit = "Local_"..tostring(enemyHandler.GetHitRegId())
+                axe = 0
+                local any_InvokeServer_result1_2 = module.Events.ToolDamageObject:InvokeServer(v, item, any_ApplyLocalDamage_result1_2, myChar.HumanoidRootPart.CFrame)
+            end
+        end
+    end
+end
+function getUnOpenChest()
+    local maxDist = 2000
+    if checkPlayer(myPlayer) then
+        local HRP = myChar.HumanoidRootPart
+        local initialCF = HRP.CFrame
+
+        local bestChest = nil
+        local bestQuality = -1
+        local bestDist = maxDist
+
+        local fallbackChest = nil
+        local fallbackDist = maxDist
+
+        for _, v in pairs(workspace.Items:GetChildren()) do
+            if string.find(string.lower(v.Name), "chest") and v:GetAttribute("LocalOpened") ~= true then
+                local itemPart = v.PrimaryPart
+                if itemPart then
+                    local dist = (itemPart.Position - HRP.Position).Magnitude
+
+                    -- tenta extrair número do nome
+                    local chestNum = tonumber(v.Name:match("(%d+)$"))
+
+                    if chestNum then
+                        -- baú numerado → prioriza pela qualidade
+                        if (chestNum > bestQuality) or (chestNum == bestQuality and dist < bestDist) then
+                            bestQuality = chestNum
+                            bestDist = dist
+                            bestChest = v
+                        end
+                    else
+                        -- baú sem número → guarda como fallback (pega o mais próximo)
+                        if dist < fallbackDist then
+                            fallbackDist = dist
+                            fallbackChest = v
+                        end
+                    end
+                end
+            end
+        end
+
+        -- primeiro tenta numerado, se não tiver pega o sem número
+        local target = bestChest or fallbackChest
+
+        if target then
+            HRP.CFrame = target.PrimaryPart.CFrame + Vector3.new(0, 2, 0)
+        else
+            print("Nenhum baú válido encontrado")
+        end
+    end
+end
+
+
+
+
+-- Carrega Rayfield
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Eai Alek",
+   LoadingTitle = "Hub de Cachorro",
+   LoadingSubtitle = "Salamaleco",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "MeuHub",
+      FileName = "Config"
+   },
+   Discord = {
+      Enabled = false,
+   },
+   KeySystem = false
+})
+
+-- Cria a aba principal
+local MainTab = Window:CreateTab("Farm", 4483362458)
+local ItemTab = Window:CreateTab("Pegar Itens", 4483362458)
+local TpTab = Window:CreateTab("Teleportes", 4483362458)
+
+
+-- Cria seção para os itens
+-- Botão para coletar Log
+TpTab:CreateButton({
+   Name = "Tp para Fogo",
+   Callback = function()
+      myChar.HumanoidRootPart.CFrame = workspace.Map.Campground.MainFire.PrimaryPart.CFrame + Vector3.new(0,5,0)
+   end,
+})
+
+TpTab:CreateButton({
+   Name = "Tp para bau",
+   Callback = function()
+      getUnOpenChest()
+   end,
+})
+TpTab:CreateButton({
+   Name = "Tp para StrongHold",
+   Callback = function()
+      myChar.HumanoidRootPart.CFrame = workspace.Map.Landmarks.Stronghold.PrimaryPart.CFrame
+   end,
+})
+ItemTab:CreateButton({
+   Name = "Coletar Madeira",
+   Callback = function()
+      getItem("Chair")
+       getItem("Log")
+   end,
+})
+
+ItemTab:CreateButton({
+   Name = "Coletar Sapling",
+   Callback = function()
+      getItem("Sapling")
+   end,
+})
+
+-- Botão para coletar Meat (Morsel e Steak)
+ItemTab:CreateButton({
+   Name = "Coletar Carne",
+   Callback = function()
+      getItem("Morsel")
+      getItem("Steak")
+   end,
+})
+ItemTab:CreateButton({
+   Name = "Coletar Combustivel",
+   Callback = function()
+      getFuel()
+   end,
+})
+
+ItemTab:CreateButton({
+   Name = "Coletar MedKit",
+   Callback = function()
+      getItem("Bandage")
+      getItem("MedKit")
+   end,
+})
+
+ItemTab:CreateButton({
+   Name = "Coletar Scrap/Metal",
+   Callback = function()
+      getScrap()
+   end,
+})
+
+ItemTab:CreateButton({
+   Name = "Coletar as cria cuzao",
+   Callback = function()
+      getChilds()
+   end,
+})
+
+
+-- Seção para Toggles
+local ToggleSection = MainTab:CreateSection("Toggles")
+
+-- Toggle ChopTrees
+local ChopEnabled = false
+MainTab:CreateToggle({
+   Name = "Cortar Arvores",
+   CurrentValue = false,
+   Flag = "ChopToggle",
+   Callback = function(Value)
+      ChopEnabled = Value
+      while ChopEnabled do
+         ChopTrees()
+         task.wait(0.1)
+      end
+   end,
+})
+
+-- Toggle KillAura
+local AuraEnabled = false
+MainTab:CreateToggle({
+   Name = "Kill Aura",
+   CurrentValue = false,
+   Flag = "AuraToggle",
+   Callback = function(Value)
+      AuraEnabled = Value
+      while AuraEnabled do
+        killAura()
+        task.wait(0.1)
+      end
+   end,
+})
+-- Cria a aba Misc
+local MiscTab = Window:CreateTab("Misc", 4483362458)
+
+-- Slider para alterar a velocidade
+local slider = MiscTab:CreateSlider({
+   Name = "Velocidade do Personagem",
+   Range = {16, 200}, -- Velocidade Mínima: 16 (padrão), Máxima: 200
+   Increment = 1,
+   Suffix = "studs/s",
+   CurrentValue = 16, -- Começa com a velocidade padrão do jogo
+   Flag = "WalkSpeedSlider", -- ID para salvar a configuração
+   Callback = function(Value)
+      if checkPlayer(myPlayer) then
+          myChar.Humanoid.WalkSpeed = Value
+      end
+   end,
+})
