@@ -1,0 +1,69 @@
+local myPlayer = game.Players.LocalPlayer
+
+function checkTitle()
+    if myPlayer.PlayerGui:FindFirstChild("TitleScreen") then
+        game:GetService("ReplicatedFirst").MainMenu.Bindables.DestroyTitleScreen:Fire(ohBoolean1)
+        game:GetService("ReplicatedFirst").InitalizeGame:Invoke()
+    end
+end
+
+function checkPlayer(player)
+	if player.Character then
+		if player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") then
+			if player.Character:FindFirstChild("Humanoid").Health > 0 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function removeAfk()
+    game:GetService("ReplicatedStorage").Communication.EventObjects.Asynchronous:FireServer("UpdateAFK", false)
+    wait(0.1)
+    myPlayer:SetAttribute("AFK", false)
+end
+
+function main()
+    if workspace:FindFirstChild("Map") and not myPlayer.PlayerGui:FindFirstChild("TitleScreen") and myPlayer:GetAttribute("Team") == "Alive" then
+        if workspace.Map:FindFirstChild("Objects") then
+            for i,v in pairs(workspace.Map.Objects:GetChildren()) do
+                if v.Name == "Candy" then
+                    local part = v:FindFirstChildOfClass("Part")
+                    if part then
+                        myPlayer.Character.HumanoidRootPart.CFrame = part.CFrame
+                        wait(1.5)
+                    end
+                end
+            end
+            for i,v in pairs(workspace.Map.Objects:GetChildren()) do
+                if v.Name == "HauntedDoor" and v:FindFirstChild("Main") and v.Main:FindFirstChild("ProxAttachment") and v.Main.ProxAttachment.ProximityPrompt.Enabled == true and checkPlayer(myPlayer)  then
+                    myPlayer.Character.HumanoidRootPart.CFrame = v:FindFirstChildOfClass("Part").CFrame
+                    myPlayer.Character.HumanoidRootPart.CFrame = v:FindFirstChildOfClass("Part").CFrame
+                    wait(0.5)
+                    fireproximityprompt(v.Main.ProxAttachment.ProximityPrompt)
+                    spawn(function()
+                        while v:FindFirstChild("Main") and v.Main:FindFirstChild("ProxAttachment") and v.Main.ProxAttachment.ProximityPrompt.Enabled and checkPlayer(myPlayer) do
+                            if not v.Main:FindFirstChild("ProxAttachment") or not v.Main.ProxAttachment.ProximityPrompt.Enabled and not checkPlayer(myPlayer) then
+                                break
+                            end
+                            myPlayer.Character.HumanoidRootPart.CFrame = v:FindFirstChildOfClass("Part").CFrame
+                            wait(0.1)
+                        end
+                    end)
+                    wait(2.5)
+                end
+            end
+            myPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-58.687828063964844, 98.89983367919922, -498.28106689453125)
+        end
+    end
+end
+while wait(1) do
+    if myPlayer:GetAttribute("AFK") == true then
+        removeAfk()
+    end
+    main()
+    checkTitle()
+end
+
+--setclipboard(tostring(game.Players.LocalPlayer.Character.HumanoidRootPart.Position))
