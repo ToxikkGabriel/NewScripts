@@ -1,0 +1,515 @@
+
+if not game:IsLoaded() then
+	game.Loaded:Wait()
+end
+wait(15)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local myPlayer = Players.LocalPlayer
+
+-- CONFIGURAÇÕES
+local SPEED = 50 -- Velocidade do Voo (Studs por segundo). 
+-- Nota: 16 é o normal. 100+ é hack. Se seu AntiCheat pegar 150, ele é bom.
+local ATTACK_DIST = 30 -- Distância para começar a bater
+local function Hook_Adonis(metadefs)
+    for _ , tbl in metadefs do
+        for i, func in tbl do
+            if type(func) == "function" and islclosure(func) then
+                local dummy_func = function()
+                    return pcall(coroutine.close, coroutine.running())
+                end
+                hookfunction(func, dummy_func)
+            end
+        end
+    end
+end
+local function Init_Bypass()
+    for i, v in getgc(true) do
+        if
+            typeof(v) == "table"
+            and rawget(v, "indexInstance")
+            and rawget(v, "newindexInstance")
+            and rawget(v, "namecallInstance")
+            and type(rawget(v,"newindexInstance")) == "table"
+        then
+            if v["newindexInstance"][1] == "kick" then
+                Hook_Adonis(v)
+            end
+        end
+    end
+end
+
+task.spawn(Init_Bypass)
+
+function checkCharacter(player)
+    if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") then
+        if player.Character.Humanoid.Health > 0 then
+            return true
+        end
+    end
+    return false
+end
+
+-- === FUNÇÃO DE MOVIMENTO MANUAL (A Mágica acontece aqui) ===
+-- moveTowards: Move 'currentCF' em direção a 'targetPosition' baseado na velocidade e tempo
+local function moveTowards(currentCF, targetPosition, speed, deltaTime)
+    local currentPos = currentCF.Position
+    local direction = (targetPosition - currentPos) -- Vetor de direção
+    local distance = direction.Magnitude -- Distância total
+    
+    -- Se já estamos muito perto (menos que o passo de 1 frame), chegamos
+    if distance < 1 then
+        return CFrame.new(targetPosition)
+    end
+    
+    -- Normaliza o vetor (transforma em tamanho 1) e multiplica pela velocidade
+    -- Isso nos dá o quanto devemos andar neste frame exato
+    local step = direction.Unit * (speed * deltaTime)
+    
+    -- Retorna a nova posição
+    return CFrame.new(currentPos + step)
+end
+function checkBlades()
+    if myPlayer.blades == 0 and myPlayer.bladedur == 0 then
+        return false
+    end
+    return true
+end
+local canAttack = false
+posToAttack = nil
+spawn(function()
+    while wait(0.5) do
+        if canAttack == true and checkCharacter(myPlayer) then
+            game:GetService("ReplicatedStorage").rems.combat:FireServer(2, posToAttack, false)
+        end
+        myPlayer.gas.Value = 5000
+    end
+end)
+
+function getBestTarget()
+    local bestTarget = nil
+    local shortestDist = 610
+    local myPos = myPlayer.Character.HumanoidRootPart.Position
+
+    for _, v in pairs(workspace.mobs:GetChildren()) do
+        -- Verifica se é Titã, tem vida e tem a nuca (nape)
+        if v.Name:find("Titan") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("nape") then
+            
+            local dist = (myPos - v.nape.Position).Magnitude
+            
+            -- Pega o mais próximo que esteja dentro do alcance do gancho
+            if dist < shortestDist and dist < 1000 then -- 1000 é o raio de busca
+                shortestDist = dist
+                bestTarget = v
+            end
+        end
+    end
+    
+    return bestTarget
+end
+
+function moveLegit(targetPosition)
+    local char = myPlayer.Character
+    if not char then return end
+    
+    local hum = char:FindFirstChild("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    
+    if hum and root then
+        
+        hum:MoveTo(targetPosition)
+        
+        -- LÓGICA DE PULO (Opcional):
+        -- Se a nuca está muito alta e estamos perto, pula para tentar alcançar ou para o gancho pegar melhor
+        local distanceToTarget = (Vector3.new(targetPosition.X, root.Position.Y, targetPosition.Z) - root.Position).Magnitude
+        
+        -- Se estivermos chegando perto do ponto ideal (atrás do titã) e o alvo estiver alto
+        if distanceToTarget < 10 and targetPosition.Y > root.Position.Y + 10 then
+            hum.Jump = true
+        end
+    end
+end
+function checkLobby()
+    if checkCharacter(myPlayer) then
+        local table = pcall(function() return workspace.lobbies.EldiaSpawn.MapTable.Union end)
+        if table then
+            local distance = (myPlayer.Character.HumanoidRootPart.Position - workspace.lobbies.EldiaSpawn.MapTable.Union.Position).Magnitude
+            if distance < 300 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function safeCall(fn, ...)
+    local ok, err = pcall(fn, ...)
+    if not ok then
+        warn("SafeCall error:", err)
+        if not rejoinDebounce then
+            rejoinDebounce = true
+            game:GetService("TeleportService"):Teleport(game.PlaceId, myPlayer)
+        end
+    end
+    return ok, err
+end
+function checkLineOfSight(origin, targetPart)
+    local direction = (targetPart.Position - origin)
+    
+    local rayParams = RaycastParams.new()
+    rayParams.FilterDescendantsInstances = {myPlayer.Character} -- Ignora a si mesmo
+    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+    
+    local result = Workspace:Raycast(origin, direction, rayParams)
+    
+    if result then
+        -- Se bateu na nuca ou no próprio Titã, o caminho está livre para o gancho
+        if result.Instance:IsDescendantOf(targetPart.Parent) then
+            return true
+        elseif result.Instance.Transparency > 0.9 then
+            -- Ignora peças invisíveis (hitboxes)
+            return true
+        end
+        -- Bateu em parede/árvore
+        return false
+    end
+    
+    -- Se não bateu em nada (muito perto ou vazio), considera visível
+    return true
+end
+local grappleFunction = nil
+local mouseUpvalueIndex = nil
+local originalMouse = nil
+local canUseGrapple = false
+
+for _, v in pairs(getgc()) do
+    -- Verifica se é uma função Lua (não C++)
+    if type(v) == "function" then
+        
+        -- Obtém as informações da função
+        local info = debug.getinfo(v)
+        
+        -- Verifica se o nome da função bate com o que procuramos
+        -- Tente variações comuns se 'grapple' não funcionar
+        if info.name == "grapple" or info.name == "grapple_upvr" then 
+            for i, upv in pairs(debug.getupvalues(v)) do
+                if typeof(upv) == "Instance" and upv:IsA("Mouse") then
+                    mouseUpvalueIndex = i
+                    originalMouse = upv
+                    grappleFunction = v
+                    canUseGrapple = true
+                end
+            end
+        end
+    end
+end
+local FakeMouse = {
+    Hit = CFrame.new(),
+    Target = nil,
+    X = 0,
+    Y = 0
+}
+
+debug.setupvalue(grappleFunction, mouseUpvalueIndex, FakeMouse)
+
+function useGrapple(nape)
+    if nape and canUseGrapple and checkCharacter(myPlayer) then
+        lastGrapplePos = nape.Position
+        wait(0.51)
+        FakeMouse.Hit = nape.CFrame
+        FakeMouse.Target = nape
+        grappleFunction("GrappleRight", Enum.UserInputState.Begin)
+        attach = game.Players.LocalPlayer.Character.ODM.RightGrapplePoint.GrapplePoint.GrappleBeam.Attachment1
+        if attach then attach.WorldPosition = nape.Position end
+    else
+        if canUseGrapple then
+            if checkCharacter(myPlayer) then
+                grappleFunction("GrappleRight", Enum.UserInputState.End)
+            end
+        end
+    end
+end
+local BACK_OFFSET = 25
+local active = true
+local leavingLobby = false
+local bb = game:service'VirtualUser'
+game:service'Players'.LocalPlayer.Idled:connect(function()
+	bb:CaptureController()bb:ClickButton2(Vector2.new())
+end)
+local utgard = {
+    click = workspace.lobbies.EldiaSpawn.MapTable:FindFirstChild("utgardtp"),
+    grappleTarget = workspace.map.paradis.Utgard.Union,
+    grapplePos = Vector3.new(1317.8367919921875, 200.587038993835449, 5301.4560546875)
+}
+
+local utgard2 = {
+    click = workspace.lobbies.EldiaSpawn.MapTable:FindFirstChild("utgardtp"),
+    grappleTarget = workspace.map.paradis.Utgard.Union,
+    grapplePos = Vector3.new(-1119.222900390625, 250.5870392322540283, 3271.24609375)
+}
+local port = {
+    click = workspace.lobbies.EldiaSpawn.MapTable:FindFirstChild("porttp"),
+    grappleTarget = workspace.map.Port:GetChildren()[78],
+    grapplePos = Vector3.new(-302.9868469238281, 200.5870354175567627, 9582.1015625)
+}
+myPlayer.CharacterAdded:Connect(function(char)
+    wait(5)
+    local charRemConn = nil
+    charRemConn = char.CharacterRemoved:Connect(function()
+        leavingLobby = false
+        active = false
+        canUseGrapple = false
+        charRemConn:Disconnect()
+    end)
+    local humConn = nil
+    humConn = char.Humanoid.Died:Connect(function()
+        leavingLobby = false
+        active = false
+        canUseGrapple = false
+        humConn:Disconnect()
+    end)
+    if char then
+        for _, v in pairs(getgc()) do
+            -- Verifica se é uma função Lua (não C++)
+            if type(v) == "function" then
+                
+                -- Obtém as informações da função
+                local info = debug.getinfo(v)
+                
+                -- Verifica se o nome da função bate com o que procuramos
+                -- Tente variações comuns se 'grapple' não funcionar
+                if info.name == "grapple" or info.name == "grapple_upvr" then 
+                    for i, upv in pairs(debug.getupvalues(v)) do
+                        if typeof(upv) == "Instance" and upv:IsA("Mouse") then
+                            mouseUpvalueIndex = i
+                            originalMouse = upv
+                            grappleFunction = v
+                        end
+                    end
+                end
+            end
+        end
+        safeCall(function()
+            debug.setupvalue(grappleFunction, mouseUpvalueIndex, FakeMouse)
+        end)
+        active = true
+        canUseGrapple = true
+    end
+end)
+local wantedLocation = utgard2
+local wantedLastNames = {"Ackerman","Jaeger","Fritz"}
+spawn(function()
+    while task.wait(10) do
+        if not table.find(wantedLastNames, myPlayer.Data.lastname.Value) and myPlayer.Data.money.Value > 10000 then
+            game:GetService("ReplicatedStorage").RerollRemotes.CashReroll:FireServer("clan", {["roller"] = workspace.clanroller2.ClickDetector,["faction"] = 1})
+        end
+        if not leavingLobby then
+            if checkCharacter(myPlayer) then
+                distance = (myPlayer.Character.HumanoidRootPart.Position - (wantedLocation.grapplePos - Vector3.new(0,200,0))).Magnitude
+                if distance > 1000 and not currentTarget == nil then
+                    myPlayer.Character.Humanoid.Health = 0
+                end
+            end
+        end
+    end
+end)
+
+local switchCooldown = false
+local switch = false
+local optimize = true
+local rejoinIfTitan = false
+spawn(function()
+    while task.wait(5) do
+        if myPlayer.Data.titanexp.Value > 0 and rejoinIfTitan then
+            game:GetService("TeleportService"):Teleport(game.PlaceId, myPlayer)
+        end
+        local incombat = myPlayer.Character:FindFirstChild("incombats")
+        if incombat and not switchCooldown and switch then
+            switchCooldown = true
+            spawn(function()
+                wait(60)
+                switchCooldown = false
+            end)
+            if #incombat:GetChildren() > 0 then
+                myPlayer.Character.Humanoid.Health = 0
+                if wantedLocation == utgard then
+                    wantedLocation = utgard2
+                else
+                    wantedLocation = utgard
+                end
+            end
+        end
+        if myPlayer.Team == "Team 2" or myPlayer.Team == "Team 1" then
+            if myPlayer.PlayerGui:FindFirstChild("Objetive") then
+                if myPlayer.PlayerGui.Objetive.Enabled == true then
+                    game:GetService("TeleportService"):Teleport(game.PlaceId, myPlayer)
+                end
+            end
+        end
+        if optimize then
+            if myPlayer:FindFirstChild("VoxelFX") then myPlayer.VoxelFX:Destroy() end
+            if myPlayer:FindFirstChild("effects") then myPlayer.ParticleFX:Destroy() end
+            if myPlayer:FindFirstChild("RealismClient") then myPlayer.ParticleFX:Destroy() end
+            if myPlayer:FindFirstChild("RealismClient") then myPlayer.ParticleFX:Destroy() end
+        end
+    end
+end)
+
+
+
+if optimize then
+    function removeAllTextures()
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Texture") or obj:IsA("Decal") then
+                obj:Destroy()
+            end
+        end
+    end
+end
+
+
+spawn(function()
+    while task.wait(0.1) do
+        if not checkCharacter(myPlayer) then continue end
+        if checkLobby() == true then
+            active = false
+            if checkCharacter(myPlayer) then
+                local char = myPlayer.Character
+                local hum = char:FindFirstChild("Humanoid")
+                if hum and not leavingLobby then
+                    leavingLobby = true
+                    hum:MoveTo(Vector3.new(-11505.83984375, 7.310423851013184, 17748.880859375))
+                    if not myPlayer.Character:FindFirstChild("b1") then game:GetService("ReplicatedStorage").rems.equip:FireServer(false) end
+                    while wait(0.1) do
+                        if not checkCharacter(myPlayer) then break end
+                        local distance = (myPlayer.Character.HumanoidRootPart.Position - Vector3.new(-11505.83984375, 7.310423851013184, 17748.880859375)).Magnitude
+                        if distance < 5 then
+                            break
+                        end
+                    end
+                    wait(1)
+                    if checkCharacter(myPlayer) then
+                        if myPlayer.Character:FindFirstChild("b1"):FindFirstChild("blade").Transparency == 1 then game:GetService("ReplicatedStorage").rems.reload:FireServer() end
+                    end
+                    if checkCharacter(myPlayer) then
+                        hum:MoveTo(Vector3.new(-11476.8759765625, 7.985222816467285, 17746.142578125))
+                    end
+                    wait(3)
+                    if checkCharacter(myPlayer) then
+                        local clickdetector = wantedLocation.click
+                        fireclickdetector(clickdetector.ClickDetector)
+                        wait(5)
+                    end
+                    if checkCharacter(myPlayer) then
+                        safeCall(function()
+                            useGrapple(wantedLocation.grappleTarget)
+                        end)
+                    end
+                    while wait(0.1) do
+                        if checkCharacter(myPlayer) == false then break end
+                        local attach = game.Players.LocalPlayer.Character.ODM.RightGrapplePoint.GrapplePoint.GrappleBeam.Attachment1
+                        if attach then
+                            attach.WorldPosition = wantedLocation.grapplePos
+                        end
+                        if myPlayer.Character.ODM:GetAttribute("GrappleRight") == false or myPlayer.Character.HumanoidRootPart:FindFirstChild("Velocity").MaxForce == Vector3.new(0,0,0) or myPlayer.Character.HumanoidRootPart:FindFirstChild("Velocity").P == 0 then
+                            safeCall(function()
+                                useGrapple(wantedLocation.grappleTarget)
+                            end)
+                        end
+                        if (myPlayer.Character.HumanoidRootPart.Position - wantedLocation.grapplePos).Magnitude < 30 then
+                            safeCall(function()
+                                useGrapple(nil)
+                            end)
+                            break
+                        end
+                    end
+                    active = true
+                    leavingLobby = false
+                end
+            end
+        else
+            active = true
+        end
+        if active == true then
+            local myRoot = myPlayer.Character.HumanoidRootPart
+            if not currentTarget or not currentTarget.Parent or currentTarget.Humanoid.Health <= 0 then
+                currentTarget = getBestTarget()
+                safeCall(function()
+                    useGrapple(nil) -- Solta gancho se trocou de alvo
+                end)
+                isGrappling = false
+            end
+
+            if currentTarget and currentTarget:FindFirstChild("nape") then
+                local nape = currentTarget.nape
+                
+
+                local canSee = checkLineOfSight(myRoot.Position, nape)
+                local dist = (myRoot.Position - nape.Position).Magnitude
+                local backDirection = -nape.CFrame.LookVector * BACK_OFFSET
+            
+
+                local targetPos = Vector3.new(
+                    nape.Position.X + backDirection.X,
+                    myPlayer.Character.HumanoidRootPart.Position.Y, -- Mantém altura do player
+                    nape.Position.Z + backDirection.Z
+                )
+                
+                moveLegit(targetPos)
+                if dist < 200 and canSee and nape and checkCharacter(myPlayer) then
+                    safeCall(function()
+                        useGrapple(nape)
+                    end)
+                end
+                if dist <= ATTACK_DIST then
+                    canAttack = true
+                    posToAttack = nape.Position
+                else
+                    canAttack = false
+                    posToAttack = nil
+                end
+            else
+                canAttack = false
+                posToAttack = nil
+                if checkCharacter(myPlayer) then
+                    safeCall(function()
+                        useGrapple(nil)
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+myPlayer.OnTeleport:Connect(function(State)
+	if State == Enum.TeleportState.Started then
+		if queueteleport then
+			queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/ToxikkGabriel/NewScripts/main/aot2'))()")
+		end
+	end
+end)
+local mt = getrawmetatable(game)
+local oldNamecall = mt.__namecall
+setreadonly(mt, false) -- Destrava a metatable para edição
+
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    -- VERIFICAÇÃO DO ATAQUE
+    -- Se o jogo tentar disparar "FireServer" e o evento for o de Teleport do seu AC
+    if method == "FireServer" and args[1] == "breakblades" then
+        print("Tentativa de reportar Teleporte bloqueada!") 
+        return nil -- NOP (Não faz nada, o servidor nunca recebe o aviso)
+    end
+
+    -- Se não for o evento do AC, deixa o jogo seguir normal
+    return oldNamecall(self, ...)
+end)
+
+setreadonly(mt, true)
+
+
