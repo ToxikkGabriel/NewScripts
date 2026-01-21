@@ -479,11 +479,11 @@ spawn(function()
     end
 end)
 
-queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
 myPlayer.OnTeleport:Connect(function(State)
 	if State == Enum.TeleportState.Started then
 		if queueteleport then
-			queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()")
+			queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/ToxikkGabriel/NewScripts/main/aot'))()")
 		end
 	end
 end)
