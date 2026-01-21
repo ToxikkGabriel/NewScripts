@@ -341,7 +341,7 @@ spawn(function()
                 end
             end
         end
-        if myPlayer.Team == "Team 2" or myPlayer.Team == "Team 1" then
+        if myPlayer.Team == "Team 2" or myPlayer.Team == "Team 1" and not myPlayer.Neutral then
             if myPlayer.PlayerGui:FindFirstChild("Objetive") then
                 if myPlayer.PlayerGui.Objetive.Enabled == true then
                     game:GetService("TeleportService"):Teleport(game.PlaceId, myPlayer)
