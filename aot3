@@ -384,6 +384,7 @@ spawn(function()
                     if not myPlayer.Character:FindFirstChild("b1") then game:GetService("ReplicatedStorage").rems.equip:FireServer(false) end
                     while wait(0.1) do
                         if not checkCharacter(myPlayer) then break end
+                        myPlayer.Character.Humanoid:MoveTo(Vector3.new(-11505.83984375, 7.310423851013184, 17748.880859375))
                         local distance = (myPlayer.Character.HumanoidRootPart.Position - Vector3.new(-11505.83984375, 7.310423851013184, 17748.880859375)).Magnitude
                         if distance < 5 then
                             break
