@@ -257,7 +257,7 @@ local port = {
 myPlayer.CharacterAdded:Connect(function(char)
     wait(5)
     local charRemConn = nil
-    charRemConn = myPlayer.CharacterRemoved:Connect(function()
+    charRemConn = myPlayer.CharacterRemoving:Connect(function()
         leavingLobby = false
         active = false
         canUseGrapple = false
