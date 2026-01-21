@@ -257,7 +257,7 @@ local port = {
 myPlayer.CharacterAdded:Connect(function(char)
     wait(5)
     local charRemConn = nil
-    charRemConn = char.CharacterRemoved:Connect(function()
+    charRemConn = myPlayer.CharacterRemoved:Connect(function()
         leavingLobby = false
         active = false
         canUseGrapple = false
@@ -485,11 +485,7 @@ end)
 
 local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
 myPlayer.OnTeleport:Connect(function(State)
-	if State == Enum.TeleportState.Started then
-		if queueteleport then
-			queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/ToxikkGabriel/NewScripts/main/aot2'))()")
-		end
-	end
+	queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/ToxikkGabriel/NewScripts/main/aot2'))()")
 end)
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
