@@ -257,7 +257,7 @@ local port = {
 myPlayer.CharacterAdded:Connect(function(char)
     wait(5)
     local charRemConn = nil
-    charRemConn = char.CharacterRemoved:Connect(function()
+    charRemConn = myPlayer.CharacterRemoving:Connect(function()
         leavingLobby = false
         active = false
         canUseGrapple = false
@@ -317,14 +317,16 @@ spawn(function()
 end)
 
 local switchCooldown = false
+local switch = true
 local optimize = true
+local rejoinIfTitan = true
 spawn(function()
     while task.wait(5) do
-        if myPlayer.Data.titanexp.Value > 0 then
+        if myPlayer.Data.titanexp.Value > 0 and rejoinIfTitan then
             game:GetService("TeleportService"):Teleport(game.PlaceId, myPlayer)
         end
         local incombat = myPlayer.Character:FindFirstChild("incombats")
-        if incombat and not switchCooldown then
+        if incombat and not switchCooldown and switch then
             switchCooldown = true
             spawn(function()
                 wait(60)
@@ -339,7 +341,7 @@ spawn(function()
                 end
             end
         end
-        if myPlayer.Team == "Team 2" or myPlayer.Team == "Team 1" then
+        if myPlayer.Team == "Team 2" or myPlayer.Team == "Team 1" and not myPlayer.Neutral then
             if myPlayer.PlayerGui:FindFirstChild("Objetive") then
                 if myPlayer.PlayerGui.Objetive.Enabled == true then
                     game:GetService("TeleportService"):Teleport(game.PlaceId, myPlayer)
@@ -381,7 +383,8 @@ spawn(function()
                     hum:MoveTo(Vector3.new(-11505.83984375, 7.310423851013184, 17748.880859375))
                     if not myPlayer.Character:FindFirstChild("b1") then game:GetService("ReplicatedStorage").rems.equip:FireServer(false) end
                     while wait(0.1) do
-                        if not checkCharacter(myPlayer) then break end
+                        if not checkCharacter(myPlayer) then leavingLobby = false break end
+                        myPlayer.Character.Humanoid:MoveTo(Vector3.new(-11505.83984375, 7.310423851013184, 17748.880859375))
                         local distance = (myPlayer.Character.HumanoidRootPart.Position - Vector3.new(-11505.83984375, 7.310423851013184, 17748.880859375)).Magnitude
                         if distance < 5 then
                             break
@@ -406,7 +409,7 @@ spawn(function()
                         end)
                     end
                     while wait(0.1) do
-                        if checkCharacter(myPlayer) == false then break end
+                        if not checkCharacter(myPlayer) then leavingLobby = false break end
                         local attach = game.Players.LocalPlayer.Character.ODM.RightGrapplePoint.GrapplePoint.GrappleBeam.Attachment1
                         if attach then
                             attach.WorldPosition = wantedLocation.grapplePos
@@ -483,11 +486,7 @@ end)
 
 local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
 myPlayer.OnTeleport:Connect(function(State)
-	if State == Enum.TeleportState.Started then
-		if queueteleport then
-			queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/ToxikkGabriel/NewScripts/main/aot'))()")
-		end
-	end
+	queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/ToxikkGabriel/NewScripts/main/aot'))()")
 end)
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
