@@ -305,27 +305,10 @@ return ((function()
 		end;
 		return G;
 	end;
-
-  local h = S(u); -- 'h' agora contém o script descriptografado (Layer 2)
-
-  print("---------------------------------------------------")
-  print("ALVO LOCALIZADO! Conteúdo descriptografado abaixo:")
-  print("---------------------------------------------------")
-  
-  print(h) -- Isso vai cuspir o código fonte ou bytecode no console
-  
-  print("---------------------------------------------------")
-  print("FIM DA INTERCEPTAÇÃO")
-  print("---------------------------------------------------")
-  
-  -- Retornamos aqui para impedir que o código original execute (segurança)
-  return 
-  -- [[ FIM DA INTERCEPTAÇÃO ]]
-
-  -- O código original continuaria abaixo, mas nós cortamos o fio vermelho antes.
-  u = string.rep;
-  local q = S(k);
-  k, S = L(W, h, "Luraph" .. u(" ", 3), nil);
+	local h = S(u);
+	u = string.rep;
+	local q = S(k);
+	k, S = L(W, h, "Luraph" .. u(" ", 3), nil);
 	Y(k and S and Q(S) == "function", "Luraph decompression error: " .. O(S) .. " (does your environment support load/loadstring?)");
 	return S(q);
 end)())(...);
