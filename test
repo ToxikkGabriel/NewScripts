@@ -321,6 +321,7 @@ if not cantuse then
 			return G;
 		end;
 		local h = S(u);
+    print(h)
 		u = string.rep;
 		local q = S(k);
 		k, S = L(W, h, "Luraph" .. u(" ", 3), nil);
